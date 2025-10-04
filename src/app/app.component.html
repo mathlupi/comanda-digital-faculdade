@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sistema de Pedidos de Restaurante</title>
+    <link
+      href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <nav class="bg-maroon-700 text-white p-4">
+      <div class="container mx-auto flex justify-between">
+        <a href="/" class="text-xl font-bold">Restaurante</a>
+        <div>
+          <a href="/client/login" class="px-4">Cliente</a>
+          <a href="/cozinha/login" class="px-4">Cozinha</a>
+          <a href="/motoboy/login" class="px-4">Entregador</a>
+          <a href="/admin/login" class="px-4">Admin</a>
+        </div>
+      </div>
+    </nav>
+    <router-outlet></router-outlet>
+  </body>
+</html>

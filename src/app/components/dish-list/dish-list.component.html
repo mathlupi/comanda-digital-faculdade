@@ -1,0 +1,44 @@
+<div class="container mx-auto p-4">
+  <h2 class="text-2xl font-bold mb-4 text-maroon-700">Lista de Pratos</h2>
+
+  <button class="btn-maroon mb-4" (click)="addDish()">
+    Adicionar Novo Prato
+  </button>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div
+      *ngFor="let dish of dishes"
+      class="border rounded-lg shadow-lg overflow-hidden transform transition duration-300 hover:scale-105"
+    >
+      <img
+        *ngIf="dish.imageUrl; else noImg"
+        [src]="dish.imageUrl"
+        alt="{{ dish.name }}"
+        class="w-full h-48 object-cover"
+      />
+      <ng-template #noImg>
+        <div class="w-full h-48 bg-gray-200 flex items-center justify-center">
+          Sem imagem
+        </div>
+      </ng-template>
+
+      <div class="p-4 bg-white">
+        <h3 class="text-lg font-semibold text-gray-800">{{ dish.name }}</h3>
+        <p class="text-gray-600">{{ dish.description }}</p>
+        <p class="font-bold text-maroon-700">R$ {{ dish.price.toFixed(2) }}</p>
+
+        <p>Ingredientes: {{ dish.ingredients || "Nenhum" }}</p>
+
+        <div class="mt-2 flex gap-2">
+          <button class="btn-maroon" (click)="editDish(dish.id)">Editar</button>
+          <button
+            class="btn-maroon bg-maroon-800"
+            (click)="deleteDish(dish.id)"
+          >
+            Excluir
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

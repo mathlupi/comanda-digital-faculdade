@@ -1,0 +1,334 @@
+<div class="container mx-auto p-4">
+  <div class="flex border-b mb-4 items-center gap-2">
+    <button
+      class="px-4 py-2"
+      [ngClass]="activeTab === 'menu' ? 'tab-active' : 'tab-inactive'"
+      (click)="definirAbaAtiva('menu')"
+    >
+      Menu
+    </button>
+
+    <button
+      class="px-4 py-2 relative"
+      [ngClass]="activeTab === 'cart' ? 'tab-active' : 'tab-inactive'"
+      (click)="definirAbaAtiva('cart')"
+    >
+      Carrinho
+      <span
+        *ngIf="obterQuantidadeCarrinho() > 0"
+        class="ml-2 inline-flex items-center justify-center text-xs font-bold text-white bg-maroon-700 rounded-full w-5 h-5 align-top"
+      >
+        {{ obterQuantidadeCarrinho() }}
+      </span>
+    </button>
+
+    <button
+      class="px-4 py-2"
+      [ngClass]="activeTab === 'track' ? 'tab-active' : 'tab-inactive'"
+      (click)="definirAbaAtiva('track')"
+    >
+      Acompanhar pedido
+    </button>
+
+    <button
+      class="px-4 py-2"
+      [ngClass]="activeTab === 'history' ? 'tab-active' : 'tab-inactive'"
+      (click)="definirAbaAtiva('history')"
+    >
+      Histórico de pedidos
+    </button>
+  </div>
+
+  <!-- Menu -->
+  <div *ngIf="activeTab === 'menu'">
+    <div class="flex border-b mb-4">
+      <button
+        class="px-4 py-2"
+        [ngClass]="menuCategory === 'Pratos' ? 'tab-active' : 'tab-inactive'"
+        (click)="definirCategoriaMenu('Pratos')"
+      >
+        Pratos
+      </button>
+      <button
+        class="px-4 py-2"
+        [ngClass]="menuCategory === 'Bebidas' ? 'tab-active' : 'tab-inactive'"
+        (click)="definirCategoriaMenu('Bebidas')"
+      >
+        Bebidas
+      </button>
+      <button
+        class="px-4 py-2"
+        [ngClass]="
+          menuCategory === 'Sobremesas' ? 'tab-active' : 'tab-inactive'
+        "
+        (click)="definirCategoriaMenu('Sobremesas')"
+      >
+        Sobremesas
+      </button>
+    </div>
+
+    <h2 class="text-2xl font-bold mb-4 text-maroon-700">{{ menuCategory }}</h2>
+    <div *ngIf="errorMessage" class="text-red-500 mb-4">{{ errorMessage }}</div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div
+        *ngFor="let dish of dishes | filterByCategory : menuCategory"
+        class="card"
+      >
+        <img
+          *ngIf="dish.imageUrl; else noImg"
+          [src]="dish.imageUrl"
+          alt="{{ dish.name }}"
+          class="img-card"
+          loading="lazy"
+          (error)="aoErroDeImagem(dish)"
+        />
+        <ng-template #noImg>
+          <div class="img-card flex items-center justify-center text-gray-500">
+            Sem imagem
+          </div>
+        </ng-template>
+
+        <div class="p-4">
+          <h3 class="text-lg font-semibold text-gray-800">{{ dish.name }}</h3>
+          <p class="text-gray-600">{{ dish.description }}</p>
+          <p class="font-bold text-maroon-700 mt-1">
+            R$ {{ dish.price.toFixed(2) }}
+          </p>
+          <p class="text-sm text-gray-700 mt-1">
+            Categoria: {{ dish.category }}
+          </p>
+
+          <div class="mt-2">
+            <p class="text-sm font-semibold text-gray-700">Ingredientes:</p>
+            <div
+              *ngFor="let ingredient of obterIngredientesArray(dish)"
+              class="flex items-center"
+            >
+              <input
+                type="checkbox"
+                [ngModel]="selectedIngredients[dish.id][ingredient]"
+                (ngModelChange)="
+                  atualizarSelecaoIngrediente(dish.id, ingredient, $event)
+                "
+                class="mr-2"
+              />
+              <label>{{ ingredient }}</label>
+            </div>
+          </div>
+
+          <div class="flex items-center mt-3 gap-2">
+            <input
+              type="number"
+              min="1"
+              [ngModel]="quantities[dish.id]"
+              (ngModelChange)="quantities[dish.id] = $event"
+              class="border p-1 w-20 rounded"
+            />
+            <button
+              class="btn-maroon flex-1"
+              (click)="adicionarAoCarrinho(dish)"
+            >
+              Adicionar ao carrinho
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Carrinho -->
+  <div *ngIf="activeTab === 'cart'">
+    <h2 class="text-2xl font-bold mb-4 text-maroon-700">Carrinho</h2>
+    <div *ngIf="cart.length === 0" class="text-gray-500">
+      Seu carrinho está vazio.
+    </div>
+
+    <div
+      *ngFor="let item of cart; let i = index"
+      class="border p-4 mb-2 rounded shadow bg-white"
+    >
+      <h3 class="font-semibold">{{ item.dish.name }}</h3>
+      <p>Preço: R$ {{ item.dish.price.toFixed(2) }}</p>
+      <p>Ingredientes: {{ item.selectedIngredients.join(", ") || "Nenhum" }}</p>
+      <input
+        type="number"
+        min="0"
+        [(ngModel)]="item.quantity"
+        (ngModelChange)="atualizarQuantidade(i, $event)"
+        class="border p-1 w-20 rounded"
+      />
+      <button class="btn-maroon mt-2" (click)="removerDoCarrinho(i)">
+        Remover
+      </button>
+    </div>
+
+    <p *ngIf="cart.length > 0" class="font-bold">
+      Total: R$ {{ obterPrecoTotal().toFixed(2) }}
+    </p>
+
+    <div *ngIf="cart.length > 0" class="mt-4 bg-white p-4 rounded shadow">
+      <input
+        type="text"
+        placeholder="Seu nome"
+        [(ngModel)]="customerName"
+        class="border p-2 mb-2 w-full rounded bg-white"
+      />
+      <input
+        type="text"
+        placeholder="Seu endereço"
+        [(ngModel)]="customerAddress"
+        class="border p-2 mb-2 w-full rounded bg-white"
+      />
+      <button class="btn-maroon" (click)="confirmarPagamento()">
+        Confirmar pagamento
+      </button>
+    </div>
+  </div>
+
+  <!-- Acompanhar (com linha do tempo bonita) -->
+  <div *ngIf="activeTab === 'track' && showTracking">
+    <h2 class="text-2xl font-bold mb-4 text-maroon-700">
+      Acompanhar seu pedido
+    </h2>
+
+    <div class="mb-2 flex flex-wrap items-center gap-4">
+      <p class="m-0">
+        <span class="font-semibold">Pedido ID:</span> {{ currentOrderId }}
+      </p>
+      <p class="m-0">
+        <span class="font-semibold">Status atual:</span> {{ orderStatus }}
+      </p>
+    </div>
+
+    <div class="bg-white rounded-xl shadow p-4 md:p-6">
+      <div class="relative">
+        <!-- Linha base -->
+        <div
+          class="absolute left-0 right-0 top-5 h-1 bg-gray-200 rounded"
+        ></div>
+        <!-- Progresso -->
+        <div
+          class="absolute left-0 top-5 h-1 bg-maroon-700 rounded transition-all duration-500"
+          [style.width.%]="
+            ((orderStatus
+              ? orderStatus === 'Pronto'
+                ? 3
+                : [
+                    'Pendente',
+                    'Em produção',
+                    'Pronto',
+                    'Aguardando motoboy',
+                    'Motoboy a caminho',
+                    'Entregue'
+                  ].indexOf(orderStatus)
+              : 0) /
+              5) *
+            100
+          "
+        ></div>
+
+        <!-- Marcadores -->
+        <div class="grid grid-cols-6 gap-2 relative">
+          <ng-container *ngFor="let i of [0, 1, 2, 3, 4, 5]">
+            <div class="flex flex-col items-center">
+              <div
+                class="w-10 h-10 rounded-full flex items-center justify-center border-2 transition-all duration-300"
+                [ngClass]="{
+                  'bg-maroon-700 border-maroon-700 text-white shadow-lg':
+                    etapaConcluida(i) || etapaAtual(i),
+                  'bg-white border-gray-300 text-gray-500':
+                    !etapaConcluida(i) && !etapaAtual(i)
+                }"
+              >
+                <ng-container *ngIf="etapaConcluida(i); else naoConcluida">
+                  ✓
+                </ng-container>
+                <ng-template #naoConcluida>
+                  <span *ngIf="!etapaAtual(i)">{{ i + 1 }}</span>
+                  <span *ngIf="etapaAtual(i)">●</span>
+                </ng-template>
+              </div>
+
+              <div class="mt-2 text-center">
+                <div
+                  class="text-sm font-semibold"
+                  [ngClass]="{
+                    'text-maroon-700': etapaAtual(i),
+                    'text-gray-700': !etapaAtual(i)
+                  }"
+                >
+                  {{ obterRotuloEtapa(i) }}
+                </div>
+                <div
+                  class="text-[11px] text-gray-500"
+                  *ngIf="obterHorarioEtapa(i)"
+                >
+                  {{ obterHorarioEtapa(i) }}
+                </div>
+              </div>
+            </div>
+          </ng-container>
+        </div>
+      </div>
+
+      <!-- Legenda -->
+      <div class="mt-4 flex flex-wrap gap-4 text-sm">
+        <div class="flex items-center gap-2">
+          <span class="inline-block w-3 h-3 rounded-full bg-maroon-700"></span>
+          <span>Concluído / Atual</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="inline-block w-3 h-3 rounded-full bg-gray-300"></span>
+          <span>Pendente</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Histórico textual opcional -->
+    <div class="mt-4 text-sm text-gray-600" *ngIf="historicoStatus?.length">
+      <p class="font-semibold mb-1">Histórico:</p>
+      <ul class="list-disc ml-5 space-y-1">
+        <li *ngFor="let h of historicoStatus">
+          <span class="font-medium">{{ h.status }}:</span>
+          {{ h.at.toLocaleString() }}
+        </li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Histórico -->
+  <div *ngIf="activeTab === 'history'">
+    <h2 class="text-2xl font-bold mb-4 text-maroon-700">
+      Histórico de pedidos
+    </h2>
+    <div *ngIf="orderHistory.length === 0" class="text-gray-500">
+      Nenhum pedido no histórico.
+    </div>
+
+    <div
+      *ngFor="let order of orderHistory"
+      class="border p-4 mb-2 rounded shadow bg-white"
+    >
+      <p>Pedido ID: {{ order.id }}</p>
+      <p>Cliente: {{ order.customerName }}</p>
+      <p>Endereço: {{ order.customerAddress }}</p>
+      <p>Total: R$ {{ order.totalPrice.toFixed(2) }}</p>
+      <p>Status: {{ order.status }}</p>
+      <p>Data de criação: {{ order.createdAt | date : "short" }}</p>
+      <p>Última atualização: {{ order.updatedAt | date : "short" }}</p>
+      <p *ngIf="order.selectedIngredients?.length">
+        Ingredientes selecionados:
+        <span *ngFor="let item of order.selectedIngredients; let last = last">
+          Prato {{ item.dishId }}: {{ item.ingredients.join(", ") || "Nenhum"
+          }}{{ last ? "" : "; " }}
+        </span>
+      </p>
+      <p
+        *ngIf="!order.selectedIngredients || !order.selectedIngredients.length"
+      >
+        Ingredientes selecionados: Nenhum
+      </p>
+    </div>
+  </div>
+</div>
